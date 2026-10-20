@@ -244,9 +244,37 @@ function drawLog(){
 function draw(){drawStage();drawPanels()}
 function stopAuto(){if(timer){clearInterval(timer);timer=null}$("bAuto").textContent="Auto-run";$("bAuto").className="p";$("auto-badge").textContent="Auto-run off";$("auto-badge").className="badge"}
 function tick(){
-  if($("autoSnap").checked&&!E.started&&E.events>=10){E.startSnapshot(IDS[rnd(3)]);E.events++}
-  else E.randomStep();
-  draw()}
+  if($("autoSnap").checked&&!E.started&&E.events>=10){
+    E.startSnapshot(IDS[rnd(3)]);
+    E.events++;
+  } else {
+    E.randomStep();
+  }
+
+  draw();
+
+  if(E.started && E.allDone()){
+    stopAuto();
+
+    var recordedTotal = E.P.reduce(function(sum,p){
+      return sum + p.rec;
+    },0);
+
+    Object.values(E.recCh).forEach(function(messages){
+      messages.forEach(function(message){
+        recordedTotal += message.amount;
+      });
+    });
+
+    if(recordedTotal === TOTAL){
+      E.log("success","Snapshot completed successfully! Total recorded: "+recordedTotal);
+    } else {
+      E.log("warn","Snapshot completed, but total mismatch! Expected: "+TOTAL+", Recorded: "+recordedTotal);
+    }
+
+    draw();
+  }
+}
 function startAuto(){stopAuto();timer=setInterval(tick,SPEEDS[$("speed").value-1]);$("bAuto").textContent="Pause";$("bAuto").className="on";$("auto-badge").textContent="Auto-run on";$("auto-badge").className="badge on"}
 function reset(){stopAuto();Object.keys(tokEls).forEach(function(k){tokEls[k].remove();delete tokEls[k]});
   E.reset();E.logs=[];E.n=0;E.log("sys","System initialised: 3 processes with "+START+" units each (total "+TOTAL+"). Channels are reliable FIFO queues.");draw()}
